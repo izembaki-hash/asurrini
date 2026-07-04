@@ -348,6 +348,7 @@
     "selectDates": "Please select the start and end dates of your trip."
   },
   "errors": {
+    "error": "Error",
     "fillRequiredFields": "Please fill in all required fields with valid values.",
     "noRecommendation": "No recommendation could be generated. Please try again.",
     "technicalError": "A technical error occurred while fetching the recommendation. Please try again later.",

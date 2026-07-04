@@ -348,6 +348,7 @@
     "selectDates": "Veuillez sélectionner les dates de début et de fin de votre voyage."
   },
   "errors": {
+    "error": "Erreur",
     "fillRequiredFields": "Veuillez remplir tous les champs obligatoires avec des valeurs valides.",
     "noRecommendation": "Aucune recommandation n'a pu être générée. Veuillez réessayer.",
     "technicalError": "Une erreur technique est survenue lors de la récupération de la recommandation. Veuillez réessayer plus tard.",
