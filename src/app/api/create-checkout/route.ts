@@ -14,13 +14,30 @@ export async function POST(req: NextRequest) {
 
     const origin = req.headers.get('origin') || 'http://localhost:3000';
 
+    const validLocales = ['fr', 'en', 'ar'];
+    const safeLocale = validLocales.includes(locale) ? locale : 'fr';
+
+    const fixUrl = (url: string) => {
+      if (!url) return '';
+      try {
+        const u = new URL(url);
+        const segments = u.pathname.split('/').filter(Boolean);
+        if (!validLocales.includes(segments[0] || '')) {
+          u.pathname = `/${safeLocale}${u.pathname}`;
+        }
+        return u.toString();
+      } catch {
+        return url;
+      }
+    };
+
     const chargilyPayload: Record<string, unknown> = {
       amount: Math.round(amount * 100),
       currency: currency?.toLowerCase() || 'dzd',
-      success_url: successUrl || `${origin}/${locale || 'fr'}/checkout/success`,
-      failure_url: failureUrl || `${origin}/${locale || 'fr'}/checkout`,
+      success_url: fixUrl(successUrl) || `${origin}/${safeLocale}/checkout/success`,
+      failure_url: fixUrl(failureUrl) || `${origin}/${safeLocale}/checkout`,
       metadata: metadata || {},
-      locale: locale || 'fr',
+      locale: safeLocale,
     };
 
     const response = await fetch(`${CHARGILY_BASE_URL}/checkouts`, {
