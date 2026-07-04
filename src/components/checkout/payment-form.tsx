@@ -67,7 +67,8 @@ export function PaymentForm({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const { plan: aiPlan, userInput } = selectedPlanData;
-  const { currency, price, planName } = aiPlan;
+  const currency = 'DZD';
+  const { price, planName } = aiPlan;
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(
