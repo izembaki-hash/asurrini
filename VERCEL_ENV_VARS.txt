@@ -1,0 +1,30 @@
+========================================
+VARIABLES D'ENVIRONNEMENT POUR VERCEL
+========================================
+
+Copiez-collez ces informations dans Vercel :
+
+----------------------------------------
+Variable 1 : OpenRouter API Key
+----------------------------------------
+
+Name:
+OPENROUTER_API_KEY
+
+Value:
+<ta-clef-openrouter>
+
+Environments:
+✅ Production
+✅ Preview  
+✅ Development
+
+----------------------------------------
+
+IMPORTANT :
+- Cette clé est OBLIGATOIRE pour que l'IA fonctionne
+- Sans cette clé, les recommandations et le chatbot ne fonctionneront pas
+- Gardez cette clé confidentielle
+
+========================================
+
