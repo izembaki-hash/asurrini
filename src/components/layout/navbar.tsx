@@ -41,19 +41,19 @@ export function Navbar() {
           <Image src="/logo.png" alt="logo de assurance voyage" width={32} height={32} className="h-8 w-auto" priority />
           <h1 className="text-xl font-bold tracking-tight text-accent">{APP_NAME}</h1>
         </Link>
-        <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
-          <Link href={ROUTES.HOME} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+        <nav className="hidden md:flex items-center gap-x-6 lg:gap-x-8">
+          <Link href={ROUTES.HOME} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('home')}
           </Link>
-          <Link href={ROUTES.GET_QUOTE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          <Link href={ROUTES.GET_QUOTE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('getQuote')}
           </Link>
           {user && (
-            <Link href={ROUTES.PROFILE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            <Link href={ROUTES.PROFILE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
               {t('myProfile')}
             </Link>
           )}
-          <Link href={ROUTES.MODIFY_CONTRACT} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          <Link href={ROUTES.MODIFY_CONTRACT} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('modifyContract')}
           </Link>
         </nav>

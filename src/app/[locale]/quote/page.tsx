@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { TripDetailsForm } from "@/components/quote/trip-details-form";
 import { PlanCard } from "@/components/quote/plan-card";
@@ -12,15 +12,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { APP_NAME, ROUTES } from "@/lib/constants";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 export default function QuotePage() {
   const t = useTranslations('quote');
   const e = useTranslations('errors');
   const c = useTranslations('common');
-  const [recommendedPlanData, setRecommendedPlanData] = useState<SelectedPlanWithTripDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const [recommendedPlanData, setRecommendedPlanData] = useState<SelectedPlanWithTripDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push(ROUTES.LOGIN);
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   const handlePlanRecommended = (data: SelectedPlanWithTripDetails) => {
     setRecommendedPlanData(data);

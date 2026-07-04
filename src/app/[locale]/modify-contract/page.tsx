@@ -1,22 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "@/i18n/routing";
 import { FindContractForm } from "@/components/modify-contract/find-contract-form";
 import { ContractModificationDetails } from "@/components/modify-contract/contract-modification-details";
 import { useTranslations } from "next-intl";
 import type { UserContract } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { APP_NAME } from "@/lib/constants";
-import { AlertTriangle } from "lucide-react";
+import { APP_NAME, ROUTES } from "@/lib/constants";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function ModifyContractPage() {
   const t = useTranslations('modify');
   const c = useTranslations('common');
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [contract, setContract] = useState<UserContract | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isContractFound, setIsContractFound] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push(ROUTES.LOGIN);
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   const handleContractFound = (foundContract: UserContract) => {
     setContract(foundContract);
