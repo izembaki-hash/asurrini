@@ -181,7 +181,9 @@
     "paymentSuccess": "Payment Successful!",
     "paymentSuccessDesc": "Your subscription to the \"{planName}\" plan has been confirmed.",
     "saveError": "Save Error",
-    "saveErrorDesc": "Could not save your contract. Please try again."
+    "saveErrorDesc": "Could not save your contract. Please try again.",
+    "paymentError": "Payment Error",
+    "paymentErrorDesc": "Payment could not be completed. Please try again."
   },
   "checkoutSuccess": {
     "loading": "Loading your order details...",

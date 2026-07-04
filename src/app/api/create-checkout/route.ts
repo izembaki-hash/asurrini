@@ -14,16 +14,13 @@ export async function POST(req: NextRequest) {
 
     const origin = req.headers.get('origin') || 'http://localhost:3000';
 
-    const chargilyPayload = {
+    const chargilyPayload: Record<string, unknown> = {
       amount: Math.round(amount * 100),
       currency: currency?.toLowerCase() || 'dzd',
       success_url: successUrl || `${origin}/${locale || 'fr'}/checkout/success`,
       failure_url: failureUrl || `${origin}/${locale || 'fr'}/checkout`,
-      webhook_url: `${origin}/api/chargily-webhook`,
       metadata: metadata || {},
-      pass_fees_to_customer: true,
       locale: locale || 'fr',
-      collect_shipping_address: false,
     };
 
     const response = await fetch(`${CHARGILY_BASE_URL}/checkouts`, {

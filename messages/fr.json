@@ -181,7 +181,9 @@
     "paymentSuccess": "Paiement Réussi !",
     "paymentSuccessDesc": "Votre souscription au plan \"{planName}\" a été confirmée.",
     "saveError": "Erreur de sauvegarde",
-    "saveErrorDesc": "Impossible de sauvegarder votre contrat. Veuillez réessayer."
+    "saveErrorDesc": "Impossible de sauvegarder votre contrat. Veuillez réessayer.",
+    "paymentError": "Erreur de paiement",
+    "paymentErrorDesc": "Le paiement n'a pas pu aboutir. Veuillez réessayer."
   },
   "checkoutSuccess": {
     "loading": "Chargement des détails de votre commande...",

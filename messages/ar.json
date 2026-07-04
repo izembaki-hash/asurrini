@@ -181,7 +181,9 @@
     "paymentSuccess": "تم الدفع بنجاح!",
     "paymentSuccessDesc": "تم تأكيد اشتراكك في خطة \"{planName}\".",
     "saveError": "خطأ في الحفظ",
-    "saveErrorDesc": "تعذر حفظ عقدك. يرجى المحاولة مرة أخرى."
+    "saveErrorDesc": "تعذر حفظ عقدك. يرجى المحاولة مرة أخرى.",
+    "paymentError": "خطأ في الدفع",
+    "paymentErrorDesc": "تعذر إتمام الدفع. يرجى المحاولة مرة أخرى."
   },
   "checkoutSuccess": {
     "loading": "جارٍ تحميل تفاصيل طلبك...",
