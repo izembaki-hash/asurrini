@@ -51,17 +51,29 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
 
+    console.log('Chargily response:', JSON.stringify(data, null, 2));
+
     if (!response.ok) {
       console.error('Chargily API error:', data);
       return NextResponse.json(
-        { error: data.message || 'Failed to create checkout' },
+        { error: data.message || data.detail || 'Failed to create checkout' },
         { status: response.status }
+      );
+    }
+
+    const paymentUrl = data.url || data.payment_url || data.checkout_url || data.redirect_url;
+
+    if (!paymentUrl) {
+      console.error('Chargily response missing payment URL:', data);
+      return NextResponse.json(
+        { error: 'Payment URL not found in Chargily response' },
+        { status: 502 }
       );
     }
 
     return NextResponse.json({
       checkoutId: data.id,
-      paymentUrl: data.url,
+      paymentUrl,
     });
   } catch (error: any) {
     console.error('Create checkout error:', error);

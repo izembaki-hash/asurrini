@@ -160,6 +160,10 @@ export function PaymentForm({
         throw new Error(data.error || 'Payment creation failed');
       }
 
+      if (!data.paymentUrl) {
+        throw new Error('No payment URL received');
+      }
+
       localStorage.removeItem('selectedInsurancePlan');
       window.location.href = data.paymentUrl;
     } catch (error: any) {
