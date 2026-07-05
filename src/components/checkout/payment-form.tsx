@@ -147,7 +147,7 @@ export function PaymentForm({
           currency: currency.toLowerCase(),
           locale,
           successUrl: `${origin}/${locale}/checkout/success?policyNumber=${policyNumber}`,
-          failureUrl: `${origin}/${locale}/checkout`,
+          failureUrl: `${origin}/${locale}/checkout?canceled=1`,
           metadata: { policyNumber },
         }),
       });
@@ -194,25 +194,25 @@ export function PaymentForm({
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                 >
                   {CHARGILY_METHODS.map((method) => (
-                    <FormItem key={method} className="flex items-center gap-3 space-y-0 p-3 border rounded-md hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5 cursor-pointer">
+                    <FormItem key={method} className="relative flex items-center gap-3 space-y-0 p-4 border-2 rounded-xl hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:shadow-sm cursor-pointer">
                       <FormControl>
                         <RadioGroupItem value={method} />
                       </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">
+                      <FormLabel className="font-medium cursor-pointer text-sm">
                         {t(method)}
                       </FormLabel>
                     </FormItem>
                   ))}
                   {COMING_SOON_METHODS.map((method) => (
-                    <div key={method} className="flex items-center gap-3 p-3 border rounded-md opacity-50 cursor-not-allowed bg-muted/30" onClick={handleComingSoon}>
-                      <RadioGroupItem value={method} disabled className="cursor-not-allowed" />
-                      <span className="text-sm font-medium flex items-center gap-2">
+                    <div key={method} className="relative flex items-center gap-3 p-4 border-2 border-dashed rounded-xl bg-muted/20 cursor-not-allowed select-none" onClick={handleComingSoon}>
+                      <RadioGroupItem value={method} disabled className="cursor-not-allowed opacity-30" />
+                      <span className="text-sm font-medium text-muted-foreground/60 flex items-center gap-2">
                         {t(method)}
-                        <Badge variant="secondary" className="text-xs">
-                          <Clock className="h-3 w-3 me-1" />
-                          {t('comingSoon')}
-                        </Badge>
                       </span>
+                      <Badge variant="secondary" className="ml-auto text-[10px] px-2 py-0.5 shrink-0 bg-muted-foreground/10 text-muted-foreground/60 border-muted-foreground/20">
+                        <Clock className="h-3 w-3 me-1" />
+                        {t('comingSoon')}
+                      </Badge>
                     </div>
                   ))}
                 </RadioGroup>
