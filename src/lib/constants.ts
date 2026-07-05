@@ -12,6 +12,9 @@ export const ROUTES = {
   POLICY_SUCCESS: "/checkout/success",
   MODIFY_CONTRACT: "/modify-contract",
   MODIFY_CONTRACT_SUCCESS: "/modify-contract/success",
+  ADMIN: "/admin",
+  ADMIN_SETUP: "/admin/setup",
+  ADMIN_UNAUTHORIZED: "/admin/unauthorized",
 };
 
 export const MOCK_INSURANCE_POLICY_LINK = "/documents/mock-policy-fr.pdf"; // This file won't exist, it's a mock link.

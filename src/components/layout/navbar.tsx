@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
+import { useAdmin } from '@/hooks/use-admin';
 import { APP_NAME, ROUTES } from '@/lib/constants';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
@@ -21,7 +22,9 @@ import { LanguageSwitcher } from './language-switcher';
 
 export function Navbar() {
   const t = useTranslations('nav');
+  const tCommon = useTranslations();
   const { user, logout, isLoading } = useAuth();
+  const { isAdmin } = useAdmin();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -81,6 +84,17 @@ export function Navbar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {isAdmin === true && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href={ROUTES.ADMIN}>
+                        <ShieldCheck className="me-2 h-4 w-4" />
+                        <span>{tCommon('admin.dashboard')}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href={ROUTES.PROFILE}>
                     <UserCircle className="me-2 h-4 w-4" />

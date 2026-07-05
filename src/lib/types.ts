@@ -93,3 +93,34 @@ export interface ModifiableContractFields {
   destination: string;
 }
 
+export interface InsuranceProduct {
+  id: string;
+  name: string;
+  description: string;
+  maxCoverage: number;
+  destinationType: string;
+  pricePerDay: number;
+  coverageDetails: string;
+  minAge: number;
+  maxAge: number;
+  maxDuration: number;
+}
+
+export interface InsuranceProviderApiConfig {
+  baseUrl: string;
+  authType: 'api_key' | 'bearer' | 'basic';
+  apiKey: string;
+  timeout: number;
+}
+
+export interface InsuranceProvider {
+  id?: string;
+  name: string;
+  logo: string;
+  isActive: boolean;
+  apiConfig: InsuranceProviderApiConfig;
+  products: InsuranceProduct[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+

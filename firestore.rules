@@ -1,14 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Admins can read/write everything
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
     }
+
+    match /users/{userId} {
+      allow read, write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+    }
+
     match /contracts/{policyNumber} {
-      allow read: if request.auth != null && resource.data.userEmail == request.auth.token.email;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null && resource.data.userEmail == request.auth.token.email;
+      allow read: if isAdmin() || (request.auth != null && resource.data.userEmail == request.auth.token.email);
+      allow create: if isAdmin() || request.auth != null;
+      allow update: if isAdmin() || (request.auth != null && resource.data.userEmail == request.auth.token.email);
       allow delete: if false;
+    }
+
+    match /settings/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow write: if isAdmin();
+    }
+
+    match /insurance_providers/{providerId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }
