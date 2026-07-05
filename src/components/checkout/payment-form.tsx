@@ -194,25 +194,27 @@ export function PaymentForm({
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                 >
                   {CHARGILY_METHODS.map((method) => (
-                    <FormItem key={method} className="relative flex items-center gap-3 space-y-0 p-4 border-2 rounded-xl hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:shadow-sm cursor-pointer">
+                    <FormItem key={method} className="flex items-start gap-3 space-y-0 p-4 border-2 rounded-xl hover:border-primary/50 transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:shadow-sm cursor-pointer">
                       <FormControl>
-                        <RadioGroupItem value={method} />
+                        <RadioGroupItem value={method} className="mt-0.5" />
                       </FormControl>
-                      <FormLabel className="font-medium cursor-pointer text-sm">
+                      <FormLabel className="font-medium cursor-pointer text-sm leading-5">
                         {t(method)}
                       </FormLabel>
                     </FormItem>
                   ))}
                   {COMING_SOON_METHODS.map((method) => (
-                    <div key={method} className="relative flex items-center gap-3 p-4 border-2 border-dashed rounded-xl bg-muted/20 cursor-not-allowed select-none" onClick={handleComingSoon}>
-                      <RadioGroupItem value={method} disabled className="cursor-not-allowed opacity-30" />
-                      <span className="text-sm font-medium text-muted-foreground/60 flex items-center gap-2">
-                        {t(method)}
-                      </span>
-                      <Badge variant="secondary" className="ml-auto text-[10px] px-2 py-0.5 shrink-0 bg-muted-foreground/10 text-muted-foreground/60 border-muted-foreground/20">
-                        <Clock className="h-3 w-3 me-1" />
-                        {t('comingSoon')}
-                      </Badge>
+                    <div key={method} className="flex items-start gap-3 p-4 border-2 border-dashed rounded-xl bg-muted/20 cursor-not-allowed select-none" onClick={handleComingSoon}>
+                      <RadioGroupItem value={method} disabled className="cursor-not-allowed opacity-30 mt-0.5" />
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                        <span className="text-sm font-medium text-muted-foreground/60">
+                          {t(method)}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-muted-foreground/10 text-muted-foreground/60 border-muted-foreground/20 font-normal whitespace-nowrap">
+                          <Clock className="h-3 w-3 me-1" />
+                          {t('comingSoon')}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </RadioGroup>
