@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME, ROUTES } from "@/lib/constants";
-import { CheckCircle, FileText, Home, AlertTriangle, Mail } from "lucide-react";
+import { CheckCircle, FileText, Home, AlertTriangle, Mail, RefreshCw } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslations } from "next-intl";
 import type { ContractPlanDetails } from "@/lib/types";
@@ -24,6 +24,8 @@ function SuccessContent() {
   const [contractDisplayDetails, setContractDisplayDetails] = useState<ContractPlanDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(true);
   const [paymentPending, setPaymentPending] = useState(false);
+  const [paymentTimeout, setPaymentTimeout] = useState(false);
+  const pollingRef = useRef(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,9 +37,12 @@ function SuccessContent() {
     }
 
     let cancelled = false;
+    let attempt = 0;
+    const MAX_ATTEMPTS = 60; // ~60 seconds total
 
     const loadContract = async () => {
-      while (!cancelled) {
+      while (!cancelled && attempt < MAX_ATTEMPTS) {
+        attempt++;
         try {
           const foundContract = await getContractByPolicyNumberWithStatus(policyNumber);
 
@@ -67,14 +72,22 @@ function SuccessContent() {
               return;
             }
 
-            setPaymentPending(true);
-            setDetailsLoading(false);
+            if (paymentStatus === 'pending') {
+              setPaymentPending(true);
+              setDetailsLoading(false);
+            }
           }
         } catch (error) {
           console.error("Failed to load contract from Firestore", error);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const delay = attempt < 10 ? 500 : 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      if (!cancelled) {
+        setPaymentTimeout(true);
+        setDetailsLoading(false);
       }
     };
 
@@ -101,6 +114,30 @@ function SuccessContent() {
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">{t('loading')}</p>
+      </div>
+    );
+  }
+
+  if (paymentTimeout) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-amber-500 mb-6" />
+        <CardTitle className="text-2xl font-semibold mb-2">{t('paymentTimeout')}</CardTitle>
+        <CardDescription className="text-muted-foreground mb-6 max-w-md">{t('paymentTimeoutDesc')}</CardDescription>
+        <div className="flex gap-3">
+          <Button asChild variant="outline">
+            <Link href={ROUTES.PROFILE}>
+              <FileText className="me-2 h-4 w-4" />
+              {t('viewProfile')}
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={ROUTES.GET_QUOTE}>
+              <RefreshCw className="me-2 h-4 w-4" />
+              {t('retryPayment')}
+            </Link>
+          </Button>
+        </div>
       </div>
     );
   }

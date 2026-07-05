@@ -183,7 +183,10 @@
     "saveError": "Save Error",
     "saveErrorDesc": "Could not save your contract. Please try again.",
     "paymentError": "Payment Error",
-    "paymentErrorDesc": "Payment could not be completed. Please try again."
+    "paymentErrorDesc": "Payment could not be completed. Please try again.",
+    "comingSoon": "Coming Soon",
+    "comingSoonDesc": "This payment method is not available yet.",
+    "chargilyNotice": "You will be redirected to the Chargily secure payment gateway to complete your payment. Your card details are handled securely by Chargily."
   },
   "checkoutSuccess": {
     "loading": "Loading your order details...",
@@ -202,7 +205,10 @@
     "thankYou": "Thank you for choosing {appName} for your travel insurance!",
     "loadingFallback": "Loading...",
     "paymentPending": "Waiting for payment confirmation",
-    "paymentPendingDesc": "Your payment is being processed. Please wait while we confirm your payment with the payment gateway."
+    "paymentPendingDesc": "Your payment is being processed. Please wait while we confirm your payment with the payment gateway.",
+    "paymentTimeout": "Payment Confirmation Timeout",
+    "paymentTimeoutDesc": "We haven't received payment confirmation yet. Please check your contracts in your profile to see if the payment was processed.",
+    "retryPayment": "Try Again"
   },
   "profile": {
     "title": "My Profile",

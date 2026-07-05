@@ -183,7 +183,10 @@
     "saveError": "Erreur de sauvegarde",
     "saveErrorDesc": "Impossible de sauvegarder votre contrat. Veuillez réessayer.",
     "paymentError": "Erreur de paiement",
-    "paymentErrorDesc": "Le paiement n'a pas pu aboutir. Veuillez réessayer."
+    "paymentErrorDesc": "Le paiement n'a pas pu aboutir. Veuillez réessayer.",
+    "comingSoon": "Bientôt Disponible",
+    "comingSoonDesc": "Ce moyen de paiement n'est pas encore disponible.",
+    "chargilyNotice": "Vous serez redirigé vers la passerelle de paiement sécurisée Chargily pour finaliser votre paiement. Les détails de votre carte sont gérés de manière sécurisée par Chargily."
   },
   "checkoutSuccess": {
     "loading": "Chargement des détails de votre commande...",
@@ -202,7 +205,10 @@
     "thankYou": "Merci d'avoir choisi {appName} pour votre assurance voyage !",
     "loadingFallback": "Chargement...",
     "paymentPending": "Confirmation du paiement en cours",
-    "paymentPendingDesc": "Votre paiement est en cours de traitement. Veuillez patienter pendant que nous confirmons votre paiement avec la passerelle de paiement."
+    "paymentPendingDesc": "Votre paiement est en cours de traitement. Veuillez patienter pendant que nous confirmons votre paiement avec la passerelle de paiement.",
+    "paymentTimeout": "Délai de confirmation dépassé",
+    "paymentTimeoutDesc": "Nous n'avons pas encore reçu la confirmation du paiement. Consultez vos contrats dans votre profil pour vérifier si le paiement a été traité.",
+    "retryPayment": "Réessayer"
   },
   "profile": {
     "title": "Mon Profil",
