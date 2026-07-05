@@ -42,18 +42,18 @@ export function Navbar() {
           <h1 className="text-xl font-bold tracking-tight text-accent">{APP_NAME}</h1>
         </Link>
         <nav className="hidden md:flex items-center gap-x-6 lg:gap-x-8">
-          <Link href={ROUTES.HOME} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+          <Link href={ROUTES.HOME} prefetch className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('home')}
           </Link>
-          <Link href={ROUTES.GET_QUOTE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+          <Link href={ROUTES.GET_QUOTE} prefetch className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('getQuote')}
           </Link>
           {user && (
-            <Link href={ROUTES.PROFILE} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+            <Link href={ROUTES.PROFILE} prefetch className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
               {t('myProfile')}
             </Link>
           )}
-          <Link href={ROUTES.MODIFY_CONTRACT} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
+          <Link href={ROUTES.MODIFY_CONTRACT} prefetch className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors whitespace-nowrap">
             {t('modifyContract')}
           </Link>
         </nav>
