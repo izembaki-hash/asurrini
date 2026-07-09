@@ -1,11 +1,12 @@
 import { db } from './firebase';
-import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { UserContract, MockUser, ContractPlanDetails } from '@/lib/types';
 
-export async function createUserProfile(uid: string, data: { email: string; fullName?: string }) {
+export async function createUserProfile(uid: string, data: { email: string; fullName?: string; passportNumber?: string }) {
   await setDoc(doc(db, 'users', uid), {
     email: data.email,
     fullName: data.fullName || '',
+    passportNumber: data.passportNumber || '',
     createdAt: serverTimestamp(),
   });
 }
@@ -14,12 +15,15 @@ export async function getUserProfile(uid: string): Promise<MockUser | null> {
   const snap = await getDoc(doc(db, 'users', uid));
   if (!snap.exists()) return null;
   const d = snap.data();
+  const created = d.createdAt;
   return {
     email: d.email || '',
     fullName: d.fullName || '',
     passportNumber: d.passportNumber || '',
     phoneNumber: d.phoneNumber || '',
     address: d.address || '',
+    photoURL: d.photoURL || '',
+    createdAt: created instanceof Timestamp ? created.toDate().toISOString() : (created || ''),
   };
 }
 

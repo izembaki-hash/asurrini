@@ -25,7 +25,6 @@ import { useState, useEffect } from "react";
 export function ProfileForm() {
   const t = useTranslations('profile');
   const v = useTranslations('validation');
-  const e = useTranslations('errors');
   const { user, updateProfile, isLoading: authIsLoading } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +86,7 @@ export function ProfileForm() {
     } catch {
       toast({
         title: t('saveError'),
-        description: e('unknownError'),
+        description: t('saveErrorDesc'),
         variant: "destructive",
       });
     } finally {

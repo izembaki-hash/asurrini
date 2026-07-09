@@ -17,7 +17,7 @@ interface AuthContextType {
   user: MockUser | null;
   firebaseUser: FirebaseUser | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, passportNumber?: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<MockUser>) => Promise<void>;
   isLoading: boolean;
@@ -48,10 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   }, []);
 
-  const signup = useCallback(async (email: string, password: string, fullName: string) => {
+  const signup = useCallback(async (email: string, password: string, fullName: string, passportNumber?: string) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await createUserProfile(cred.user.uid, { email, fullName });
-    setUser({ email, fullName });
+    await createUserProfile(cred.user.uid, { email, fullName, passportNumber });
+    setUser({ email, fullName, passportNumber });
   }, []);
 
   const logout = useCallback(async () => {

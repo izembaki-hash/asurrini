@@ -1,6 +1,10 @@
 "use client";
 
 import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileHeader } from "@/components/profile/profile-header";
+import { ProfileStats } from "@/components/profile/profile-stats";
+import { QuickActions } from "@/components/profile/quick-actions";
+import { SecuritySection } from "@/components/profile/security-section";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -30,7 +34,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <ProfileHeader />
+
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-primary">{t('title')}</CardTitle>
@@ -42,6 +48,10 @@ export default function ProfilePage() {
           <ProfileForm />
         </CardContent>
       </Card>
+
+      <ProfileStats />
+      <QuickActions />
+      <SecuritySection />
     </div>
   );
 }

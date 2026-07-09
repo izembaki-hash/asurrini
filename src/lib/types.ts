@@ -7,6 +7,8 @@ export interface MockUser {
   passportNumber?: string;
   phoneNumber?: string;
   address?: string;
+  photoURL?: string;
+  createdAt?: string;
 }
 
 // InsurancePlan is the direct output from the AI

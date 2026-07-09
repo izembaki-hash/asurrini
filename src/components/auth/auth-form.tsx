@@ -79,7 +79,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       if (mode === "login") {
         await login(values.email, values.password);
       } else {
-        await signup(values.email, values.password, (values as any).fullName || '');
+        await signup(values.email, values.password, (values as any).fullName || '', (values as any).passportNumber || '');
       }
 
       toast({
