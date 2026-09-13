@@ -29,10 +29,14 @@ export async function GET(req: NextRequest) {
 
     // If only policyNumber provided, lookup cibTransactionId
     if (!orderToCheck && resolvedPolicy) {
-      const snap = await adminDb.collection('contracts').doc(resolvedPolicy).get();
-      if (snap.exists) {
-        const data = snap.data() as any;
-        orderToCheck = data.cibTransactionId || data.sofizTransactionId || null;
+      try {
+        const snap = await adminDb.collection('contracts').doc(resolvedPolicy).get();
+        if (snap.exists) {
+          const data = snap.data() as any;
+          orderToCheck = data.cibTransactionId || data.sofizTransactionId || null;
+        }
+      } catch (dbErr) {
+        console.error('[SofizPay webhook] Firestore lookup failed', dbErr);
       }
     }
 
@@ -57,19 +61,23 @@ export async function GET(req: NextRequest) {
     const paymentStatus = mapSofizpayToPaymentStatus(check);
 
     if (resolvedPolicy) {
-      await adminDb.collection('contracts').doc(resolvedPolicy).set(
-        {
-          sofizLastCheckAt: new Date().toISOString(),
-          sofizLastStatus: check.status,
-          sofizLastRaw: check.raw,
-          sofizWebhookAt: new Date().toISOString(),
-          sofizWebhookSignature: signature || null,
-          paymentStatus,
-          ...(paymentStatus === 'paid' ? { paidAt: new Date().toISOString(), sofizStatus: check.status } : {}),
-          ...(paymentStatus === 'failed' ? { sofizStatus: check.status } : {}),
-        },
-        { merge: true }
-      );
+      try {
+        await adminDb.collection('contracts').doc(resolvedPolicy).set(
+          {
+            sofizLastCheckAt: new Date().toISOString(),
+            sofizLastStatus: check.status,
+            sofizLastRaw: check.raw,
+            sofizWebhookAt: new Date().toISOString(),
+            sofizWebhookSignature: signature || null,
+            paymentStatus,
+            ...(paymentStatus === 'paid' ? { paidAt: new Date().toISOString(), sofizStatus: check.status } : {}),
+            ...(paymentStatus === 'failed' ? { sofizStatus: check.status } : {}),
+          },
+          { merge: true }
+        );
+      } catch (dbErr) {
+        console.error('[SofizPay webhook] Firestore update failed', dbErr);
+      }
     }
 
     // If this is a browser redirect (return_url), redirect to success page
@@ -122,15 +130,19 @@ export async function POST(req: NextRequest) {
       const check = await checkCibTransaction(order_number);
       const paymentStatus = mapSofizpayToPaymentStatus(check);
       if (policyNumber) {
-        await adminDb.collection('contracts').doc(policyNumber).set(
-          {
-            paymentStatus,
-            sofizLastStatus: check.status,
-            sofizLastRaw: check.raw,
-            paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
-          },
-          { merge: true }
-        );
+        try {
+          await adminDb.collection('contracts').doc(policyNumber).set(
+            {
+              paymentStatus,
+              sofizLastStatus: check.status,
+              sofizLastRaw: check.raw,
+              paidAt: paymentStatus === 'paid' ? new Date().toISOString() : undefined,
+            },
+            { merge: true }
+          );
+        } catch (dbErr) {
+          console.error('[SofizPay webhook POST] Firestore update failed', dbErr);
+        }
       }
       return NextResponse.json({ received: true, status: check.status, paymentStatus });
     }

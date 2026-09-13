@@ -11,10 +11,14 @@ export async function POST(req: NextRequest) {
     let orderToCheck: string | null = order_number || orderNumber || cibTransactionId || transactionId || null;
 
     if (!orderToCheck && policyNumber) {
-      const snap = await adminDb.collection('contracts').doc(policyNumber).get();
-      if (snap.exists) {
-        const data = snap.data() as any;
-        orderToCheck = data.cibTransactionId || data.sofizTransactionId || data.checkoutId || null;
+      try {
+        const snap = await adminDb.collection('contracts').doc(policyNumber).get();
+        if (snap.exists) {
+          const data = snap.data() as any;
+          orderToCheck = data.cibTransactionId || data.sofizTransactionId || data.checkoutId || null;
+        }
+      } catch (dbErr) {
+        console.error('[SofizPay] check POST Firestore lookup failed', dbErr);
       }
     }
 
@@ -97,10 +101,14 @@ export async function GET(req: NextRequest) {
     let orderToCheck: string | null = order_number;
 
     if (!orderToCheck && policyNumber) {
-      const snap = await adminDb.collection('contracts').doc(policyNumber).get();
-      if (snap.exists) {
-        const data = snap.data() as any;
-        orderToCheck = data.cibTransactionId || data.sofizTransactionId || null;
+      try {
+        const snap = await adminDb.collection('contracts').doc(policyNumber).get();
+        if (snap.exists) {
+          const data = snap.data() as any;
+          orderToCheck = data.cibTransactionId || data.sofizTransactionId || null;
+        }
+      } catch (dbErr) {
+        console.error('[SofizPay] check-transaction GET Firestore lookup failed', dbErr);
       }
     }
 
@@ -125,7 +133,9 @@ export async function GET(req: NextRequest) {
           updates.paymentStatus = 'failed';
         }
         await adminDb.collection('contracts').doc(policyNumber).set(updates, { merge: true });
-      } catch {}
+      } catch (e) {
+        console.error('[SofizPay] check GET Firestore update failed', e);
+      }
     }
 
     return NextResponse.json({
