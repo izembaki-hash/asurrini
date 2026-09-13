@@ -8,13 +8,34 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save } from 'lucide-react';
 
+interface SiteContact {
+  phone: string;
+  email: string;
+  address: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  whatsapp: string;
+}
+
 interface Settings {
   baseRate: number;
   modificationFee: number;
   destinationCoefficients: Record<string, number>;
   ageCoefficients: Record<string, number>;
   budgetOptions: number[];
+  contact?: SiteContact;
 }
+
+const DEFAULT_CONTACT: SiteContact = {
+  phone: '+213 (0)XX XX XX XX',
+  email: 'support@assurini.dz',
+  address: '',
+  facebook: '',
+  instagram: '',
+  twitter: '',
+  whatsapp: '',
+};
 
 const DEFAULT_SETTINGS: Settings = {
   baseRate: 80,
@@ -22,6 +43,7 @@ const DEFAULT_SETTINGS: Settings = {
   destinationCoefficients: { schengen: 1.5, maghreb: 1.1, usa: 1.7, africa: 1.3, other: 1.0 },
   ageCoefficients: { '60+': 1.5, '40-59': 1.2, '19-39': 1.0, '0-18': 0.9 },
   budgetOptions: [150000, 300000, 600000],
+  contact: DEFAULT_CONTACT,
 };
 
 export default function AdminSettingsPage() {
@@ -33,11 +55,21 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     adminFetch('/api/admin/settings')
       .then((data) => {
-        if (data.settings) setSettings(data.settings);
+        if (data.settings) {
+          setSettings((s) => ({
+            ...s,
+            ...data.settings,
+            contact: { ...DEFAULT_CONTACT, ...(data.settings.contact || {}) },
+          }));
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const updateContact = (key: keyof SiteContact, value: string) => {
+    setSettings((s) => ({ ...s, contact: { ...(s.contact || DEFAULT_CONTACT), [key]: value } }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -116,6 +148,43 @@ export default function AdminSettingsPage() {
                 <Input type="number" step="0.1" value={val} onChange={(e) => updateAgeCoeff(key, e.target.value)} />
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg">{t('contactSettings')}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t('contactSettingsDesc')}</p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('phone')}</label>
+              <Input value={settings.contact?.phone || ''} onChange={(e) => updateContact('phone', e.target.value)} placeholder="+213 ..." />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('email')}</label>
+              <Input type="email" value={settings.contact?.email || ''} onChange={(e) => updateContact('email', e.target.value)} placeholder="support@..." />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm text-muted-foreground mb-1 block">{t('address')}</label>
+              <Input value={settings.contact?.address || ''} onChange={(e) => updateContact('address', e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('facebookUrl')}</label>
+              <Input value={settings.contact?.facebook || ''} onChange={(e) => updateContact('facebook', e.target.value)} placeholder="https://facebook.com/..." />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('instagramUrl')}</label>
+              <Input value={settings.contact?.instagram || ''} onChange={(e) => updateContact('instagram', e.target.value)} placeholder="https://instagram.com/..." />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('twitterUrl')}</label>
+              <Input value={settings.contact?.twitter || ''} onChange={(e) => updateContact('twitter', e.target.value)} placeholder="https://x.com/..." />
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">{t('whatsappNumber')}</label>
+              <Input value={settings.contact?.whatsapp || ''} onChange={(e) => updateContact('whatsapp', e.target.value)} placeholder="+213 ..." />
+            </div>
           </CardContent>
         </Card>
 

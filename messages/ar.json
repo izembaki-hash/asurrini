@@ -525,6 +525,12 @@
     "no": "لا",
     "active": "نشط",
     "logoUrl": "رابط الشعار",
-    "deleteConfirm": "هل أنت متأكد من حذف {name}؟"
+    "deleteConfirm": "هل أنت متأكد من حذف {name}؟",
+    "contactSettings": "بيانات الاتصال والتذييل",
+    "contactSettingsDesc": "تظهر هذه المعلومات في تذييل الموقع.",
+    "facebookUrl": "رابط فيسبوك",
+    "instagramUrl": "رابط انستغرام",
+    "twitterUrl": "رابط تويتر / إكس",
+    "whatsappNumber": "رقم واتساب"
   }
 }

@@ -1,12 +1,49 @@
+"use client";
+
+import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import Image from 'next/image';
-import { Facebook, Twitter, Instagram, Edit, ShieldCheck } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Edit, MessageCircle, MapPin, Phone, Mail } from 'lucide-react';
 import { APP_NAME, ROUTES } from '@/lib/constants';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
 
-export async function Footer() {
-  const t = await getTranslations('footer');
+interface SiteContact {
+  phone: string;
+  email: string;
+  address: string;
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  whatsapp: string;
+}
+
+const DEFAULT_CONTACT: SiteContact = {
+  phone: '+213 (0)XX XX XX XX',
+  email: 'support@assurini.dz',
+  address: '',
+  facebook: '',
+  instagram: '',
+  twitter: '',
+  whatsapp: '',
+};
+
+export function Footer() {
+  const t = useTranslations('footer');
   const currentYear = new Date().getFullYear();
+  const [contact, setContact] = useState<SiteContact>(DEFAULT_CONTACT);
+
+  useEffect(() => {
+    fetch('/api/public/site-settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.contact) setContact({ ...DEFAULT_CONTACT, ...data.contact });
+      })
+      .catch(() => {});
+  }, []);
+
+  const waLink = contact.whatsapp
+    ? `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`
+    : null;
 
   return (
     <footer className="bg-secondary text-secondary-foreground border-t border-border">
@@ -34,13 +71,19 @@ export async function Footer() {
           <div>
             <h3 className="text-md font-semibold mb-3">{t('followUs')}</h3>
             <div className="flex space-x-4">
-              <Link href="#" prefetch={false} aria-label="Facebook" className="hover:text-primary transition-colors"><Facebook size={20} /></Link>
-              <Link href="#" prefetch={false} aria-label="Twitter" className="hover:text-primary transition-colors"><Twitter size={20} /></Link>
-              <Link href="#" prefetch={false} aria-label="Instagram" className="hover:text-primary transition-colors"><Instagram size={20} /></Link>
+              <Link href={contact.facebook || '#'} prefetch={false} aria-label="Facebook" className="hover:text-primary transition-colors"><Facebook size={20} /></Link>
+              <Link href={contact.twitter || '#'} prefetch={false} aria-label="Twitter" className="hover:text-primary transition-colors"><Twitter size={20} /></Link>
+              <Link href={contact.instagram || '#'} prefetch={false} aria-label="Instagram" className="hover:text-primary transition-colors"><Instagram size={20} /></Link>
+              {waLink && (
+                <Link href={waLink} prefetch={false} aria-label="WhatsApp" className="hover:text-primary transition-colors"><MessageCircle size={20} /></Link>
+              )}
             </div>
             <h3 className="text-md font-semibold mt-6 mb-3">{t('contactUs')}</h3>
-            <p className="text-sm">support@{APP_NAME.toLowerCase().replace(/\s+/g, '')}.dz</p>
-            <p className="text-sm">+213 (0)XX XX XX XX</p>
+            <p className="text-sm flex items-center gap-1.5"><Mail size={14} className="shrink-0" /> {contact.email}</p>
+            <p className="text-sm flex items-center gap-1.5 mt-1"><Phone size={14} className="shrink-0" /> {contact.phone}</p>
+            {contact.address && (
+              <p className="text-sm flex items-center gap-1.5 mt-1"><MapPin size={14} className="shrink-0" /> {contact.address}</p>
+            )}
           </div>
         </div>
         <div className="border-t border-border/50 pt-6 text-center text-sm">

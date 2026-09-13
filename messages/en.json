@@ -525,6 +525,12 @@
     "no": "No",
     "active": "Active",
     "logoUrl": "Logo URL",
-    "deleteConfirm": "Are you sure you want to delete {name}?"
+    "deleteConfirm": "Are you sure you want to delete {name}?",
+    "contactSettings": "Contact & Footer",
+    "contactSettingsDesc": "This information appears in the website footer.",
+    "facebookUrl": "Facebook URL",
+    "instagramUrl": "Instagram URL",
+    "twitterUrl": "Twitter / X URL",
+    "whatsappNumber": "WhatsApp number"
   }
 }
