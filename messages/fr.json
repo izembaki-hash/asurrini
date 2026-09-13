@@ -186,7 +186,12 @@
     "paymentErrorDesc": "Le paiement n'a pas pu aboutir. Veuillez réessayer.",
     "comingSoon": "Bientôt Disponible",
     "comingSoonDesc": "Ce moyen de paiement n'est pas encore disponible.",
-    "chargilyNotice": "Vous serez redirigé vers la passerelle de paiement sécurisée Chargily pour finaliser votre paiement. Les détails de votre carte sont gérés de manière sécurisée par Chargily."
+    "chargilyNotice": "Vous serez redirigé vers la passerelle de paiement sécurisée Chargily pour finaliser votre paiement. Les détails de votre carte sont gérés de manière sécurisée par Chargily.",
+    "sofizpayNotice": "Vous serez redirigé vers la passerelle de paiement sécurisée SofizPay (SATIM) pour finaliser votre paiement avec votre carte CIB ou EDAHABIA. Vos données bancaires sont gérées de manière sécurisée par SofizPay et ne transitent jamais par nos serveurs.",
+    "sofizpayNoticeTitle": "Paiement sécurisé via SofizPay",
+    "phone": "Numéro de téléphone",
+    "phoneHint": "Requis pour SofizPay (CIB/EDAHABIA). Format international : +213 XXX XX XX XX",
+    "phoneRequired": "Le numéro de téléphone est requis pour le paiement."
   },
   "checkoutSuccess": {
     "loading": "Chargement des détails de votre commande...",
@@ -379,7 +384,8 @@
     "paymentMethodRequired": "Veuillez sélectionner une méthode de paiement.",
     "agreeTermsRequired": "Vous devez accepter les termes et conditions pour continuer.",
     "policyNumberRequired": "Le numéro de police est requis.",
-    "selectDates": "Veuillez sélectionner les dates de début et de fin de votre voyage."
+    "selectDates": "Veuillez sélectionner les dates de début et de fin de votre voyage.",
+    "phoneRequired": "Veuillez entrer un numéro de téléphone valide (au moins 9 chiffres)."
   },
   "errors": {
     "error": "Erreur",

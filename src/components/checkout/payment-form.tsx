@@ -13,12 +13,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "@/i18n/routing";
-import { useState } from "react";
-import { Loader2, Lock, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, Lock, Clock, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { APP_NAME, ROUTES, INSURANCE_POLICY_NUMBER_PREFIX } from "@/lib/constants";
 import type { UserContract, SelectedPlanWithTripDetails } from "@/lib/types";
@@ -30,6 +31,7 @@ const paymentSchema = z.object({
   paymentMethod: z.enum(["cib", "edahabia"], {
     required_error: "paymentMethodRequired",
   }),
+  phone: z.string().min(9, { message: "phoneRequired" }).max(20),
   agreeToTerms: z.boolean().refine(val => val === true, {
     message: "agreeTermsRequired",
   }),
@@ -74,11 +76,18 @@ export function PaymentForm({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       paymentMethod: "cib",
+      phone: user?.phoneNumber || "",
       agreeToTerms: false,
     },
   });
 
   const selectedMethod = form.watch('paymentMethod');
+
+  useEffect(() => {
+    if (user?.phoneNumber && !form.getValues('phone')) {
+      form.setValue('phone', user.phoneNumber);
+    }
+  }, [user?.phoneNumber, form]);
 
   const onSubmit = async (values: PaymentFormValues) => {
     if (COMING_SOON_METHODS.includes(values.paymentMethod)) {
@@ -139,6 +148,41 @@ export function PaymentForm({
 
     try {
       const origin = window.location.origin;
+
+      // Try SofizPay first (real payment gateway for Algeria - CIB/EDAHABIA via SATIM)
+      const sofizRes = await fetch('/api/sofizpay/create-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: aiPlan.price,
+          currency: currency.toLowerCase(),
+          locale,
+          policyNumber,
+          fullName: user.fullName || user.email,
+          phone: values.phone || user.phoneNumber || '',
+          email: user.email,
+          successUrl: `${origin}/${locale}/checkout/success?policyNumber=${policyNumber}`,
+          failureUrl: `${origin}/${locale}/checkout?canceled=1`,
+          memo: policyNumber,
+        }),
+      });
+
+      const sofizData = await sofizRes.json();
+
+      if (sofizRes.ok && sofizData.paymentUrl) {
+        localStorage.removeItem('selectedInsurancePlan');
+        window.location.href = sofizData.paymentUrl;
+        return;
+      }
+
+      // If SofizPay not configured (500) or failed, fallback to Chargily if available
+      console.warn('SofizPay failed, trying Chargily fallback', sofizData);
+      if (sofizData.error && sofizData.error.includes('not configured')) {
+        // Directly try Chargily
+      } else if (!sofizRes.ok && sofizRes.status !== 500) {
+        throw new Error(sofizData.error || 'SofizPay payment creation failed');
+      }
+
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,7 +199,7 @@ export function PaymentForm({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Payment creation failed');
+        throw new Error(data.error || sofizData.error || 'Payment creation failed');
       }
 
       if (!data.paymentUrl) {
@@ -165,8 +209,8 @@ export function PaymentForm({
       localStorage.removeItem('selectedInsurancePlan');
       window.location.href = data.paymentUrl;
     } catch (error: any) {
-      console.error("Chargily checkout error:", error);
-      toast({ title: t('paymentError'), description: e('paymentError'), variant: "destructive" });
+      console.error("Payment checkout error:", error);
+      toast({ title: t('paymentError'), description: error.message || e('paymentError'), variant: "destructive" });
       setIsProcessing(false);
     }
   };
@@ -224,8 +268,27 @@ export function PaymentForm({
           )}
         />
 
-        <div className="p-4 border rounded-md bg-accent/5 text-sm text-muted-foreground">
-          {t('chargilyNotice')}
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('phone') || 'Téléphone'}</FormLabel>
+              <FormControl>
+                <Input placeholder="+213 5XX XX XX XX" {...field} type="tel" />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">{t('phoneHint') || 'Requis pour le paiement SofizPay (CIB/Edahabia). Format international recommandé.'}</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="p-4 border rounded-md bg-primary/5 text-sm text-muted-foreground flex gap-3">
+          <Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-foreground mb-1">{t('sofizpayNoticeTitle') || 'Paiement sécurisé via SofizPay'}</p>
+            <p>{t('sofizpayNotice') || t('chargilyNotice')}</p>
+          </div>
         </div>
 
         <FormField

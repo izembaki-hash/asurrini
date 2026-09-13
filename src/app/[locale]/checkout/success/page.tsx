@@ -30,6 +30,7 @@ function SuccessContent() {
 
   useEffect(() => {
     const policyNumber = searchParams.get("policyNumber");
+    const orderNumber = searchParams.get("order_number") || searchParams.get("cib_transaction_id") || searchParams.get("transaction_id") || searchParams.get("orderNumber") || searchParams.get("cibTransactionId");
 
     if (!policyNumber) {
       setDetailsLoading(false);
@@ -38,7 +39,30 @@ function SuccessContent() {
 
     let cancelled = false;
     let attempt = 0;
-    const MAX_ATTEMPTS = 60; // ~60 seconds total
+    const MAX_ATTEMPTS = 90;
+
+    // If SofizPay redirected with order_number, verify immediately server-side
+    const verifySofizpay = async (orderToCheck?: string | null) => {
+      try {
+        const res = await fetch('/api/sofizpay/check-transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ policyNumber, order_number: orderToCheck || orderNumber || undefined }),
+        });
+        const data = await res.json();
+        if (data.paymentStatus === 'paid' || data.isPaid) {
+          return true;
+        }
+      } catch (e) {
+        console.warn('SofizPay verify failed', e);
+      }
+      return false;
+    };
+
+    // Initial verify if we have orderNumber from SofizPay return_url
+    if (orderNumber) {
+      verifySofizpay(orderNumber);
+    }
 
     const loadContract = async () => {
       while (!cancelled && attempt < MAX_ATTEMPTS) {
@@ -48,8 +72,9 @@ function SuccessContent() {
 
           if (foundContract) {
             const paymentStatus = (foundContract as any).paymentStatus;
+            const hasSofiz = (foundContract as any).cibTransactionId || (foundContract as any).sofizTransactionId;
 
-            if (paymentStatus === 'paid' || !paymentStatus) {
+            if (paymentStatus === 'paid' || (!paymentStatus && !hasSofiz)) {
               if (!cancelled) {
                 setContractDisplayDetails({
                   policyNumber: foundContract.policyNumber,
@@ -67,21 +92,62 @@ function SuccessContent() {
                   issueDate: foundContract.issueDate,
                   coverageDetails: foundContract.coverageDetails,
                 });
+                setPaymentPending(false);
                 setDetailsLoading(false);
               }
               return;
             }
 
-            if (paymentStatus === 'pending') {
-              setPaymentPending(true);
-              setDetailsLoading(false);
+            if (paymentStatus === 'pending' || hasSofiz) {
+              // Try SofizPay verification every 2 attempts (~2-4 sec)
+              if (attempt % 2 === 0) {
+                const verified = await verifySofizpay(hasSofiz || orderNumber);
+                if (verified && !cancelled) {
+                  // Re-fetch contract after verification
+                  const refreshed = await getContractByPolicyNumberWithStatus(policyNumber);
+                  if (refreshed && (refreshed as any).paymentStatus === 'paid') {
+                    setContractDisplayDetails({
+                      policyNumber: refreshed.policyNumber,
+                      planName: refreshed.planName,
+                      price: refreshed.originalPrice,
+                      currency: refreshed.currency,
+                      provider: refreshed.provider,
+                      startDate: refreshed.startDate,
+                      endDate: refreshed.endDate,
+                      destination: refreshed.destination,
+                      policyDocumentLink: refreshed.policyDocumentLink,
+                      userFullName: refreshed.userFullName,
+                      userEmail: refreshed.userEmail,
+                      userPassportNumber: refreshed.userPassportNumber,
+                      issueDate: refreshed.issueDate,
+                      coverageDetails: refreshed.coverageDetails,
+                    });
+                    setPaymentPending(false);
+                    setDetailsLoading(false);
+                    return;
+                  }
+                }
+              }
+              if (!cancelled) {
+                setPaymentPending(true);
+                setDetailsLoading(false);
+              }
+            }
+
+            if (paymentStatus === 'failed') {
+              if (!cancelled) {
+                setPaymentPending(false);
+                setDetailsLoading(false);
+                setPaymentTimeout(true);
+              }
+              return;
             }
           }
         } catch (error) {
           console.error("Failed to load contract from Firestore", error);
         }
 
-        const delay = attempt < 10 ? 500 : 2000;
+        const delay = attempt < 10 ? 800 : 2000;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
 

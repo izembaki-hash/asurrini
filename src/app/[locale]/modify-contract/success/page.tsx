@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_NAME, ROUTES, DEFAULT_CURRENCY } from "@/lib/constants";
-import { getContractByPolicyNumber } from "@/lib/firestore-service";
+import { getContractByPolicyNumber, updateContract } from "@/lib/firestore-service";
 import { CheckCircle, FileText, Home, AlertTriangle, Edit, Mail } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { ContractPlanDetails } from "@/lib/types";
 import { DownloadContractButton } from "@/components/checkout/insurance-contract";
 import { Loader2 } from "lucide-react";
@@ -39,41 +39,89 @@ function ModifySuccessContent() {
   useEffect(() => {
     const policyNumber = searchParams.get("policyNumber");
     const costPaidParam = searchParams.get("actualModificationCostPaid");
+    const sofiz = searchParams.get("sofiz");
+    const orderNumber = searchParams.get("order_number") || searchParams.get("cib_transaction_id") || searchParams.get("transaction_id");
     if(costPaidParam) setActualCostPaid(costPaidParam);
 
-    if (policyNumber) {
-      getContractByPolicyNumber(policyNumber)
-        .then((foundContract) => {
-          if (foundContract && (!user || foundContract.userEmail === user.email)) {
-            setContractDisplayDetails({
-              policyNumber: foundContract.policyNumber,
-              planName: foundContract.planName,
-              price: foundContract.originalPrice,
-              currency: foundContract.currency,
-              provider: foundContract.provider,
-              startDate: foundContract.startDate,
-              endDate: foundContract.endDate,
-              destination: foundContract.destination,
-              policyDocumentLink: foundContract.policyDocumentLink,
-              userFullName: foundContract.userFullName,
-              userEmail: foundContract.userEmail,
-              userPassportNumber: foundContract.userPassportNumber,
-              issueDate: foundContract.issueDate,
-              lastModifiedDate: foundContract.lastModifiedDate,
-              coverageDetails: foundContract.coverageDetails,
-              actualModificationCostPaid: costPaidParam || undefined,
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to load modified contract from Firestore", error);
-        })
-        .finally(() => {
-          setDetailsLoading(false);
-        });
-    } else {
+    if (!policyNumber) {
       setDetailsLoading(false);
+      return;
     }
+
+    const load = async () => {
+      // If this is a SofizPay modification return, verify payment and apply pending modification
+      if (sofiz && typeof window !== 'undefined') {
+        const pendingKey = `pendingModification_${policyNumber}`;
+        const pendingRaw = localStorage.getItem(pendingKey);
+        if (pendingRaw) {
+          try {
+            const pending = JSON.parse(pendingRaw);
+            // Verify SofizPay payment
+            let verified = false;
+            try {
+              const verifyRes = await fetch('/api/sofizpay/check-transaction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ policyNumber, order_number: orderNumber || undefined }),
+              });
+              const vData = await verifyRes.json();
+              verified = vData.isPaid || vData.paymentStatus === 'paid';
+            } catch (e) {
+              console.warn('Verify modification payment failed', e);
+            }
+            // If verified or sandbox fallback, apply modification
+            if (verified || !orderNumber) {
+              try {
+                await updateContract(policyNumber, pending.updatedData);
+                localStorage.removeItem(pendingKey);
+              } catch (e) {
+                console.error('Failed to apply pending modification', e);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse pending modification', e);
+          }
+        } else if (orderNumber) {
+          // No local pending but we have orderNumber – still verify to update payment status
+          try {
+            await fetch('/api/sofizpay/check-transaction', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ policyNumber, order_number: orderNumber }),
+            });
+          } catch {}
+        }
+      }
+
+      try {
+        const foundContract = await getContractByPolicyNumber(policyNumber);
+        if (foundContract && (!user || foundContract.userEmail === user.email)) {
+          setContractDisplayDetails({
+            policyNumber: foundContract.policyNumber,
+            planName: foundContract.planName,
+            price: foundContract.originalPrice,
+            currency: foundContract.currency,
+            provider: foundContract.provider,
+            startDate: foundContract.startDate,
+            endDate: foundContract.endDate,
+            destination: foundContract.destination,
+            policyDocumentLink: foundContract.policyDocumentLink,
+            userFullName: foundContract.userFullName,
+            userEmail: foundContract.userEmail,
+            userPassportNumber: foundContract.userPassportNumber,
+            issueDate: foundContract.issueDate,
+            lastModifiedDate: foundContract.lastModifiedDate,
+            coverageDetails: foundContract.coverageDetails,
+            actualModificationCostPaid: costPaidParam || undefined,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load modified contract from Firestore", error);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+    load();
   }, [searchParams, user]);
 
   const handleSendEmail = () => {

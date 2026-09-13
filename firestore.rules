@@ -31,5 +31,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /payments/{payId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.email == request.auth.token.email);
+      allow create: if isAdmin() || request.auth != null;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

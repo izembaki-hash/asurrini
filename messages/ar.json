@@ -186,7 +186,12 @@
     "paymentErrorDesc": "تعذر إتمام الدفع. يرجى المحاولة مرة أخرى.",
     "comingSoon": "قريباً",
     "comingSoonDesc": "طريقة الدفع هذه غير متاحة بعد.",
-    "chargilyNotice": "سيتم توجيهك إلى بوابة الدفع الآمنة Chargily لإتمام الدفع. بيانات بطاقتك تتم معالجتها بأمان بواسطة Chargily."
+    "chargilyNotice": "سيتم توجيهك إلى بوابة الدفع الآمنة Chargily لإتمام الدفع. بيانات بطاقتك تتم معالجتها بأمان بواسطة Chargily.",
+    "sofizpayNotice": "سيتم توجيهك إلى بوابة الدفع الآمنة SofizPay (SATIM) لإكمال الدفع باستخدام بطاقة CIB أو EDAHABIA. تتم معالجة بياناتك المصرفية بأمان بواسطة SofizPay ولا تمر عبر خوادمنا أبداً.",
+    "sofizpayNoticeTitle": "دفع آمن عبر SofizPay",
+    "phone": "رقم الهاتف",
+    "phoneHint": "مطلوب لـ SofizPay (CIB/EDAHABIA). الصيغة الدولية: +213 XXX XX XX XX",
+    "phoneRequired": "رقم الهاتف مطلوب للدفع."
   },
   "checkoutSuccess": {
     "loading": "جارٍ تحميل تفاصيل طلبك...",
@@ -379,7 +384,8 @@
     "paymentMethodRequired": "يرجى اختيار طريقة دفع.",
     "agreeTermsRequired": "يجب الموافقة على الشروط والأحكام للمتابعة.",
     "policyNumberRequired": "رقم الوثيقة مطلوب.",
-    "selectDates": "يرجى تحديد تاريخي البداية والنهاية لرحلتك."
+    "selectDates": "يرجى تحديد تاريخي البداية والنهاية لرحلتك.",
+    "phoneRequired": "يرجى إدخال رقم هاتف صحيح (9 أرقام على الأقل)."
   },
   "errors": {
     "error": "خطأ",

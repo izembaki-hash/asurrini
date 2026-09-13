@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
+import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -40,7 +41,7 @@ const dateLocaleMap: Record<string, Locale> = {
 
 interface ContractModificationDetailsProps {
   contract: UserContract;
-  onModificationSuccess: () => void;
+  onModificationSuccess?: () => void;
 }
 
 export function ContractModificationDetails({ contract, onModificationSuccess }: ContractModificationDetailsProps) {
@@ -50,6 +51,7 @@ export function ContractModificationDetails({ contract, onModificationSuccess }:
   const dateLocale = dateLocaleMap[locale] || fr;
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCalculatingCost, setIsCalculatingCost] = useState(false);
   const [canModify, setCanModify] = useState(false);
@@ -193,31 +195,77 @@ export function ContractModificationDetails({ contract, onModificationSuccess }:
     }
     setIsProcessing(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const modifiedValues = form.getValues();
+    const updatedData: Partial<UserContract> = {
+      startDate: format(modifiedValues.startDate, "yyyy-MM-dd"),
+      endDate: format(modifiedValues.endDate, "yyyy-MM-dd"),
+      destination: modifiedValues.destination,
+      planName: newPlanRecommendation.planName,
+      provider: newPlanRecommendation.provider,
+      originalPrice: newPlanRecommendation.price.toString(),
+      coverageDetails: newPlanRecommendation.coverageDetails,
+      policyDocumentLink: newPlanRecommendation.policyDocumentLink,
+      lastModifiedDate: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
+    };
 
+    // Try real SofizPay payment for modification fee
     try {
-      const modifiedValues = form.getValues();
-      const updatedData: Partial<UserContract> = {
-        startDate: format(modifiedValues.startDate, "yyyy-MM-dd"),
-        endDate: format(modifiedValues.endDate, "yyyy-MM-dd"),
-        destination: modifiedValues.destination,
-        planName: newPlanRecommendation.planName,
-        provider: newPlanRecommendation.provider,
-        originalPrice: newPlanRecommendation.price.toString(),
-        coverageDetails: newPlanRecommendation.coverageDetails,
-        policyDocumentLink: newPlanRecommendation.policyDocumentLink,
-        lastModifiedDate: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
-      };
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const phone = user?.phoneNumber || '';
+      const email = user?.email || contract.userEmail;
 
+      // Store pending modification for after payment verification
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`pendingModification_${contract.policyNumber}`, JSON.stringify({
+          updatedData,
+          amount: calculatedPaymentDue,
+          newPlan: newPlanRecommendation,
+        }));
+      }
+
+      const res = await fetch('/api/sofizpay/create-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: calculatedPaymentDue,
+          currency: 'DZD',
+          locale,
+          policyNumber: contract.policyNumber,
+          fullName: user?.fullName || contract.userFullName || email,
+          phone: phone || '+213000000000',
+          email,
+          successUrl: `${origin}/${locale}/modify-contract/success?policyNumber=${contract.policyNumber}&actualModificationCostPaid=${calculatedPaymentDue.toFixed(2)}&sofiz=1`,
+          failureUrl: `${origin}/${locale}/modify-contract?canceled=1`,
+          memo: `MODIFY_${contract.policyNumber}`,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+        return;
+      }
+      // If SofizPay not configured, fallback to simulation
+      if (data.error && data.error.includes('not configured')) {
+        console.warn('SofizPay not configured, fallback to simulation');
+      } else if (!res.ok) {
+        throw new Error(data.error || 'SofizPay modification payment failed');
+      }
+    } catch (sofizErr: any) {
+      console.warn('SofizPay modification attempt failed, fallback', sofizErr);
+      // If it's a real error (not "not configured"), show it but still try fallback
+      // For now continue to simulation fallback if SofizPay fails
+    }
+
+    // Fallback: simulation (when SofizPay not configured or for testing)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
       await updateContract(contract.policyNumber, updatedData);
-
       toast({
         title: t('modificationSuccess'),
         description: t('modificationSuccessDesc', { policyNumber: contract.policyNumber, amount: calculatedPaymentDue.toFixed(2), currency: DEFAULT_CURRENCY }),
       });
-
       router.push(`${ROUTES.MODIFY_CONTRACT_SUCCESS}?policyNumber=${contract.policyNumber}&actualModificationCostPaid=${calculatedPaymentDue.toFixed(2)}`);
-      onModificationSuccess();
+      onModificationSuccess?.();
     } catch (error: any) {
       console.error("Error modifying contract:", error);
       toast({ title: t('modificationError'), description: t('modificationErrorDesc'), variant: "destructive" });

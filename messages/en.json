@@ -186,7 +186,12 @@
     "paymentErrorDesc": "Payment could not be completed. Please try again.",
     "comingSoon": "Coming Soon",
     "comingSoonDesc": "This payment method is not available yet.",
-    "chargilyNotice": "You will be redirected to the Chargily secure payment gateway to complete your payment. Your card details are handled securely by Chargily."
+    "chargilyNotice": "You will be redirected to the Chargily secure payment gateway to complete your payment. Your card details are handled securely by Chargily.",
+    "sofizpayNotice": "You will be redirected to the secure SofizPay (SATIM) payment gateway to complete your payment with your CIB or EDAHABIA card. Your banking data is handled securely by SofizPay and never passes through our servers.",
+    "sofizpayNoticeTitle": "Secure payment via SofizPay",
+    "phone": "Phone number",
+    "phoneHint": "Required for SofizPay (CIB/EDAHABIA). International format: +213 XXX XX XX XX",
+    "phoneRequired": "Phone number is required for payment."
   },
   "checkoutSuccess": {
     "loading": "Loading your order details...",
@@ -379,7 +384,8 @@
     "paymentMethodRequired": "Please select a payment method.",
     "agreeTermsRequired": "You must accept the terms and conditions to continue.",
     "policyNumberRequired": "Policy number is required.",
-    "selectDates": "Please select the start and end dates of your trip."
+    "selectDates": "Please select the start and end dates of your trip.",
+    "phoneRequired": "Please enter a valid phone number (at least 9 digits)."
   },
   "errors": {
     "error": "Error",
