@@ -47,6 +47,19 @@ interface PaymentFormProps {
   selectedPlanData: SelectedPlanWithTripDetails;
 }
 
+async function parseApiJsonSafe(res: Response): Promise<any> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text().catch(() => '');
+    throw new Error(
+      res.status === 500
+        ? 'Server error (payment service temporarily unavailable). Please try again in a minute.'
+        : `Unexpected server response (HTTP ${res.status}). Please try again.`
+    );
+  }
+  return res.json();
+}
+
 function generatePolicyNumber(): string {
   const randomNumber = Math.floor(100000 + Math.random() * 900000);
   const timestampPart = Date.now().toString().slice(-4);
@@ -167,7 +180,13 @@ export function PaymentForm({
         }),
       });
 
-      const sofizData = await sofizRes.json();
+      let sofizData: any = {};
+      try {
+        sofizData = await parseApiJsonSafe(sofizRes);
+      } catch (parseErr: any) {
+        console.warn('SofizPay endpoint unreachable, trying Chargily fallback', parseErr);
+        sofizData = { error: parseErr.message || 'SofizPay unavailable', _unreachable: true };
+      }
 
       if (sofizRes.ok && sofizData.paymentUrl) {
         localStorage.removeItem('selectedInsurancePlan');
@@ -175,9 +194,9 @@ export function PaymentForm({
         return;
       }
 
-      // If SofizPay not configured (500) or failed, fallback to Chargily if available
+      // If SofizPay not configured (500) or unreachable, fallback to Chargily if available
       console.warn('SofizPay failed, trying Chargily fallback', sofizData);
-      if (sofizData.error && sofizData.error.includes('not configured')) {
+      if (sofizData.error && (sofizData.error.includes('not configured') || (sofizData as any)._unreachable)) {
         // Directly try Chargily
       } else if (!sofizRes.ok && sofizRes.status !== 500) {
         throw new Error(sofizData.error || 'SofizPay payment creation failed');
@@ -196,7 +215,7 @@ export function PaymentForm({
         }),
       });
 
-      const data = await response.json();
+      const data = await parseApiJsonSafe(response);
 
       if (!response.ok) {
         throw new Error(data.error || sofizData.error || 'Payment creation failed');

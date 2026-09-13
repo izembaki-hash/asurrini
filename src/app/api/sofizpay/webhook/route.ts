@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
 import { checkCibTransaction, mapSofizpayToPaymentStatus } from '@/lib/sofizpay';
+
+// NOTE: firebase-admin is intentionally NOT imported at top level (see create-transaction route).
+export const dynamic = 'force-dynamic';
+
+async function getAdminDbSafely() {
+  try {
+    const mod = await import('@/lib/firebase-admin');
+    return mod.adminDb;
+  } catch (e) {
+    console.error('[SofizPay webhook] firebase-admin unavailable', e);
+    return null;
+  }
+}
 
 /**
  * SofizPay return callback / webhook.
@@ -30,6 +42,8 @@ export async function GET(req: NextRequest) {
     // If only policyNumber provided, lookup cibTransactionId
     if (!orderToCheck && resolvedPolicy) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const snap = await adminDb.collection('contracts').doc(resolvedPolicy).get();
         if (snap.exists) {
           const data = snap.data() as any;
@@ -43,6 +57,8 @@ export async function GET(req: NextRequest) {
     // Reverse lookup: if only order_number provided, find contract by cibTransactionId
     if (!resolvedPolicy && orderToCheck) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const q = await adminDb.collection('contracts').where('cibTransactionId', '==', orderToCheck).limit(1).get();
         if (!q.empty) resolvedPolicy = q.docs[0].id;
         else {
@@ -62,6 +78,8 @@ export async function GET(req: NextRequest) {
 
     if (resolvedPolicy) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         await adminDb.collection('contracts').doc(resolvedPolicy).set(
           {
             sofizLastCheckAt: new Date().toISOString(),
@@ -131,6 +149,8 @@ export async function POST(req: NextRequest) {
       const paymentStatus = mapSofizpayToPaymentStatus(check);
       if (policyNumber) {
         try {
+          const adminDb = await getAdminDbSafely();
+          if (!adminDb) throw new Error('Firestore unavailable');
           await adminDb.collection('contracts').doc(policyNumber).set(
             {
               paymentStatus,

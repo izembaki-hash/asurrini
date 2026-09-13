@@ -239,7 +239,14 @@ export function ContractModificationDetails({ contract, onModificationSuccess }:
           memo: `MODIFY_${contract.policyNumber}`,
         }),
       });
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = {};
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        console.warn('SofizPay endpoint returned non-JSON (HTTP ' + res.status + '), fallback to simulation');
+        data = { error: 'not configured' };
+      }
       if (res.ok && data.paymentUrl) {
         window.location.href = data.paymentUrl;
         return;

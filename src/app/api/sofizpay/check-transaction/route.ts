@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkCibTransaction, mapSofizpayToPaymentStatus } from '@/lib/sofizpay';
-import { adminDb } from '@/lib/firebase-admin';
+
+// NOTE: firebase-admin is intentionally NOT imported at top level (see create-transaction route).
+export const dynamic = 'force-dynamic';
+
+async function getAdminDbSafely() {
+  try {
+    const mod = await import('@/lib/firebase-admin');
+    return mod.adminDb;
+  } catch (e) {
+    console.error('[SofizPay] firebase-admin unavailable', e);
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +24,8 @@ export async function POST(req: NextRequest) {
 
     if (!orderToCheck && policyNumber) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const snap = await adminDb.collection('contracts').doc(policyNumber).get();
         if (snap.exists) {
           const data = snap.data() as any;
@@ -32,6 +46,8 @@ export async function POST(req: NextRequest) {
     // Update contract if policyNumber provided
     if (policyNumber) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const updates: Record<string, any> = {
           sofizLastCheckAt: new Date().toISOString(),
           sofizLastStatus: check.status,
@@ -102,6 +118,8 @@ export async function GET(req: NextRequest) {
 
     if (!orderToCheck && policyNumber) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const snap = await adminDb.collection('contracts').doc(policyNumber).get();
         if (snap.exists) {
           const data = snap.data() as any;
@@ -121,6 +139,8 @@ export async function GET(req: NextRequest) {
 
     if (policyNumber) {
       try {
+        const adminDb = await getAdminDbSafely();
+        if (!adminDb) throw new Error('Firestore unavailable');
         const updates: Record<string, any> = {
           sofizLastCheckAt: new Date().toISOString(),
           sofizLastStatus: check.status,

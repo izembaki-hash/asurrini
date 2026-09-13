@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCibTransaction, getSofizpayConfig } from '@/lib/sofizpay';
-import { adminDb } from '@/lib/firebase-admin';
+
+// NOTE: firebase-admin is intentionally NOT imported at top level.
+// On Netlify, a failing top-level import crashes the whole route with an HTML 500 page.
+// We dynamic-import it inside the handler so failures degrade to JSON errors instead.
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -97,7 +101,9 @@ export async function POST(req: NextRequest) {
     });
 
     // Update contract in Firestore with SofizPay transaction ids and pending status
+    // (best-effort: payment_url is returned even if Firestore/Firebase is unavailable)
     try {
+      const { adminDb } = await import('@/lib/firebase-admin');
       await adminDb.collection('contracts').doc(policyNumber).set(
         {
           paymentStatus: 'pending',
