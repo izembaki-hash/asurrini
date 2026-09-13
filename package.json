@@ -63,6 +63,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.13",
     "@types/node": "^20",
     "@types/qrcode.react": "^1.0.5",
     "@types/react": "^18",
