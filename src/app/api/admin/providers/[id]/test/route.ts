@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const decoded = await verifyAdmin(req);
@@ -9,6 +10,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const doc = await adminDb.collection('insurance_providers').doc(id).get();
     if (!doc.exists) return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
 

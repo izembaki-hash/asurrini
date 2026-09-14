@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { adminAuth } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ uid: string }> }) {
   const decoded = await verifyAdmin(req);
@@ -12,6 +12,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ uid:
   const { uid } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const userDoc = await adminDb.collection('users').doc(uid).get();
     if (!userDoc.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -46,11 +48,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ uid:
       }
     }
 
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
+
     if (Object.keys(updates).length > 0) {
       await adminDb.collection('users').doc(uid).update(updates);
     }
 
     if (body.disabled !== undefined) {
+      const { getAdminAuth } = await import('@/lib/firebase-admin');
+      const adminAuth = getAdminAuth();
       await adminAuth.updateUser(uid, { disabled: body.disabled });
     }
 

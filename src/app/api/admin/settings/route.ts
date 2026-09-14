@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 const SETTINGS_DOC_ID = 'insurance_config';
 
@@ -11,6 +12,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const doc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
     return NextResponse.json({ settings: doc.exists ? doc.data() : null });
   } catch (error) {
@@ -26,6 +29,8 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const body = await req.json();
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(body, { merge: true });
 

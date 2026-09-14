@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
 
 export async function verifyAdmin(req: NextRequest) {
   // Must NEVER throw: every admin route calls this outside try/catch,
@@ -14,6 +13,8 @@ export async function verifyAdmin(req: NextRequest) {
     if (!token) return null;
 
     try {
+      const { getAdminAuth } = await import('@/lib/firebase-admin');
+      const adminAuth = getAdminAuth();
       const decoded = await adminAuth.verifyIdToken(token);
       if (decoded.admin === true) {
         return decoded;

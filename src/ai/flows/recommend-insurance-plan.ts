@@ -163,9 +163,16 @@ export async function recommendInsurancePlan(
   }
 
   const data = await response.json();
-  let content = data.choices?.[0]?.message?.content;
+  // Groq reasoning models (gpt-oss) put output in reasoning or content; handle both
+  const msg = data.choices?.[0]?.message as any;
+  let content: string | undefined = msg?.content;
+  if (!content || !content.trim()) {
+    // Fallback to reasoning field for gpt-oss models
+    content = msg?.reasoning || data.choices?.[0]?.reasoning || '';
+  }
 
-  if (!content) {
+  if (!content || !content.trim()) {
+    console.error('Groq empty response', JSON.stringify(data).slice(0, 1000));
     throw new Error("L'IA n'a pas pu générer une recommandation. Veuillez réessayer.");
   }
 

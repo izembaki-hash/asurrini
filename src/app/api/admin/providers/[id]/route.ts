@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const decoded = await verifyAdmin(req);
@@ -10,6 +10,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const doc = await adminDb.collection('insurance_providers').doc(id).get();
     if (!doc.exists) return NextResponse.json({ error: 'Provider not found' }, { status: 404 });
     return NextResponse.json({ id: doc.id, ...doc.data() });
@@ -26,6 +28,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const body = await req.json();
     const { name, logo, isActive, apiConfig, products } = body;
 
@@ -37,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       isActive: isActive ?? true,
       apiConfig: apiConfig || { baseUrl: '', authType: 'bearer', apiKey: '', timeout: 10000 },
       products: products || [],
-      updatedAt: FieldValue.serverTimestamp(),
+      updatedAt: new Date(),
     });
 
     return NextResponse.json({ success: true });
@@ -54,6 +58,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     await adminDb.collection('insurance_providers').doc(id).delete();
     return NextResponse.json({ success: true });
   } catch (error) {

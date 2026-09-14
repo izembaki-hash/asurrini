@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const decoded = await verifyAdmin(req);
@@ -12,6 +13,8 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get('status') || '';
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const contractsSnap = await adminDb.collection('contracts').get();
     let payments = contractsSnap.docs
       .map((doc) => {

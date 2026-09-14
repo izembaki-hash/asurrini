@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const decoded = await verifyAdmin(req);
@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const usersSnap = await adminDb.collection('users').get();
     const users = usersSnap.docs.map((doc) => ({ uid: doc.id, ...doc.data() }));
 
@@ -24,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const enriched = users.map((user: any) => ({
       ...user,
-      createdAt: user.createdAt instanceof Timestamp ? user.createdAt.toDate().toISOString() : user.createdAt,
+      createdAt: typeof user.createdAt?.toDate === 'function' ? user.createdAt.toDate().toISOString() : user.createdAt,
       contractCount: contractCountByEmail[user.email] || 0,
     }));
 

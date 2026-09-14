@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ policyNumber: string }> }) {
   const decoded = await verifyAdmin(req);
@@ -11,6 +12,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ poli
   const { policyNumber } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const doc = await adminDb.collection('contracts').doc(policyNumber).get();
     if (!doc.exists) {
       return NextResponse.json({ error: 'Contract not found' }, { status: 404 });
@@ -31,6 +34,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ poli
   const { policyNumber } = await params;
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const body = await req.json();
     const updates: Record<string, any> = {};
     const allowedFields = ['paymentStatus', 'planName', 'provider', 'originalPrice', 'startDate', 'endDate', 'destination', 'coverageDetails', 'notes'];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   const decoded = await verifyAdmin(req);
@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
     if (!policyNumber || !userEmail || !userFullName || !planName || !originalPrice || !startDate || !endDate || !destination) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
 
     const contract = {
       policyNumber,
@@ -37,7 +40,7 @@ export async function POST(req: NextRequest) {
       lastModifiedDate: new Date().toISOString(),
       paymentStatus: 'paid',
       paidAt: new Date().toISOString(),
-      createdAt: FieldValue.serverTimestamp(),
+      createdAt: new Date(),
     };
 
     await adminDb.collection('contracts').doc(policyNumber).set(contract);

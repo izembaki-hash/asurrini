@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const decoded = await verifyAdmin(req);
@@ -13,13 +13,15 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(url.searchParams.get('limit') || '100');
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const snap = await adminDb.collection('audit_logs').orderBy('timestamp', 'desc').limit(limit).get();
     const logs = snap.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
         ...data,
-        timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : data.timestamp,
+        timestamp: typeof data.timestamp?.toDate === 'function' ? data.timestamp.toDate().toISOString() : data.timestamp,
       };
     });
 

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { FieldValue } from 'firebase-admin/firestore';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const decoded = await verifyAdmin(req);
   if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
   try {
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
     const snap = await adminDb.collection('insurance_providers').orderBy('name').get();
     const providers = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     return NextResponse.json({ providers });
@@ -27,14 +29,17 @@ export async function POST(req: NextRequest) {
 
     if (!name) return NextResponse.json({ error: 'Provider name is required' }, { status: 400 });
 
+    const { getAdminDb } = await import('@/lib/firebase-admin');
+    const adminDb = getAdminDb();
+
     const doc = {
       name,
       logo: logo || '',
       isActive: isActive ?? true,
       apiConfig: apiConfig || { baseUrl: '', authType: 'bearer', apiKey: '', timeout: 10000 },
       products: products || [],
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const ref = await adminDb.collection('insurance_providers').add(doc);

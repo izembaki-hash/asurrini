@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'uid is required' }, { status: 400 });
     }
 
+    const { getAdminAuth } = await import('@/lib/firebase-admin');
+    const adminAuth = getAdminAuth();
     await adminAuth.setCustomUserClaims(uid, { admin: true });
 
     return NextResponse.json({ success: true });
