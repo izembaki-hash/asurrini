@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyFirebaseToken } from '@/lib/verify-firebase-token';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,11 +11,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'no token provided' }, { status: 400 });
     }
 
-    const { getAdminAuth } = await import('@/lib/firebase-admin');
-    const adminAuth = getAdminAuth();
-
     try {
-      const decoded = await adminAuth.verifyIdToken(token);
+      const decoded = await verifyFirebaseToken(token);
       return NextResponse.json({
         success: true,
         uid: decoded.uid,
@@ -26,7 +24,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         verifyError: String(verifyErr?.message || verifyErr).slice(0, 500),
-        verifyCode: verifyErr?.code || null,
       });
     }
   } catch (e: any) {
