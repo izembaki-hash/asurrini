@@ -4,10 +4,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  // Keep firebase-admin (+ its ESM deps jose/jwks-rsa) as external Node modules.
-  // Bundling them breaks Netlify Functions (require() of ESM via jwks-rsa -> jose)
-  // and crashes every admin API route with an HTML 500 instead of JSON.
-  serverExternalPackages: ['firebase-admin', 'jose', 'jwks-rsa'],
+  // Keep firebase-admin as external – bundling it breaks Netlify Functions
+  // (native gRPC + jose ESM via jwks-rsa) and causes HTML 500s.
+  serverExternalPackages: ['firebase-admin'],
   typescript: {
     ignoreBuildErrors: true,
   },
