@@ -26,6 +26,25 @@ export async function GET() {
       }
     }
 
+    // Test if firebase-admin can actually initialize (not just import)
+    let firebaseAdminInit = 'not-tested';
+    try {
+      const { getAdminDb } = await import('@/lib/firebase-admin');
+      getAdminDb();
+      firebaseAdminInit = 'db-ok';
+    } catch (e: any) {
+      firebaseAdminInit = 'fail: ' + String(e?.message || e).slice(0, 300);
+    }
+
+    let firebaseAdminAuth = 'not-tested';
+    try {
+      const { getAdminAuth } = await import('@/lib/firebase-admin');
+      getAdminAuth();
+      firebaseAdminAuth = 'auth-ok';
+    } catch (e: any) {
+      firebaseAdminAuth = 'fail: ' + String(e?.message || e).slice(0, 300);
+    }
+
     return NextResponse.json({
       node: process.version,
       hasServiceAccountKey: hasKey,
@@ -44,6 +63,8 @@ export async function GET() {
       hasAdminSecretCode: !!process.env.ADMIN_SECRET_CODE,
       hasGroqKey: !!process.env.GROQ_API_KEY,
       groqKeyLength: (process.env.GROQ_API_KEY || '').length,
+      firebaseAdminInit,
+      firebaseAdminAuth,
     });
   } catch (e: any) {
     return NextResponse.json({ error: 'diag-crashed', message: String(e?.message || e).slice(0, 800) }, { status: 500 });

@@ -1,8 +1,6 @@
 import { NextRequest } from 'next/server';
 
 export async function verifyAdmin(req: NextRequest) {
-  // Must NEVER throw: every admin route calls this outside try/catch,
-  // and a throw becomes an HTML 500 page instead of a JSON error.
   try {
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -12,19 +10,17 @@ export async function verifyAdmin(req: NextRequest) {
     const token = authHeader.split('Bearer ')[1];
     if (!token) return null;
 
-    try {
-      const { getAdminAuth } = await import('@/lib/firebase-admin');
-      const adminAuth = getAdminAuth();
-      const decoded = await adminAuth.verifyIdToken(token);
-      if (decoded.admin === true) {
-        return decoded;
-      }
-      return null;
-    } catch {
-      return null;
+    // Dynamic import — never at top level
+    const { getAdminAuth } = await import('@/lib/firebase-admin');
+    const adminAuth = getAdminAuth();
+    const decoded = await adminAuth.verifyIdToken(token);
+    if (decoded.admin === true) {
+      return decoded;
     }
-  } catch (e) {
-    console.error('[admin-auth] verifyAdmin failed', e);
+    return null;
+  } catch (e: any) {
+    // Log the actual error so we can debug
+    console.error('[admin-auth] verifyAdmin failed:', e?.message || e);
     return null;
   }
 }
