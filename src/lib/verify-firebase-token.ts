@@ -1,14 +1,9 @@
 /**
- * Manual Firebase JWT verification using Google's public JWKS.
+ * Manual Firebase JWT verification using Google's public X.509 certificates.
  * No firebase-admin dependency — avoids the jose ESM issue on Netlify Node 20.
  */
 
-const GOOGLE_CERTS_URL = 'https://www.googleapis.com/service_accounts/v1/jwt/metadata/x509/securetoken@system.gserviceaccount.com';
-const JWT_ISSUER_PREFIX = 'https://securetoken.google.com/';
-const EXPECTED_AUDIENCE_PREFIX = 'https://auth.firebase.google.com/g/'
-
-let cachedKeys: Record<string, string> = {};  // kid → PEM public key
-let cacheExpiry = 0;
+const GOOGLE_CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 
 interface FirebaseDecodedToken {
   uid: string;
@@ -17,10 +12,12 @@ interface FirebaseDecodedToken {
   [key: string]: unknown;
 }
 
+let cachedKeys: { keys: Record<string, string>; expiry: number } | null = null;
+
 async function fetchPublicKeys(): Promise<Record<string, string>> {
   const now = Date.now();
-  if (Object.keys(cachedKeys).length > 0 && now < cacheExpiry) {
-    return cachedKeys;
+  if (cachedKeys && cachedKeys.expiry > now && Object.keys(cachedKeys.keys).length > 0) {
+    return cachedKeys.keys;
   }
 
   const res = await fetch(GOOGLE_CERTS_URL);
@@ -28,41 +25,54 @@ async function fetchPublicKeys(): Promise<Record<string, string>> {
     throw new Error(`Failed to fetch Google public keys: ${res.status}`);
   }
 
-  cachedKeys = await res.json();
-  cacheExpiry = now + 60 * 60 * 1000; // cache 1 hour
-  return cachedKeys;
+  const keys = (await res.json()) as Record<string, string>;
+  cachedKeys = { keys, expiry: now + 60 * 60 * 1000 };
+  return keys;
 }
 
-function base64UrlDecode(str: string): Uint8Array {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+function clearCache() {
+  cachedKeys = null;
+}
+
+function base64UrlDecode(input: string): Uint8Array {
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const pad = base64.length % 4;
   const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+
+  if (typeof atob === 'function') {
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
   }
-  return bytes;
+  return new Uint8Array(Buffer.from(padded, 'base64'));
 }
 
-function pemToSpkiDer(pem: string): Uint8Array {
-  const b64 = pem
-    .replace(/-----BEGIN PUBLIC KEY-----/, '')
-    .replace(/-----END PUBLIC KEY-----/, '')
-    .replace(/\s+/g, '');
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
+/**
+ * Extract SPKI DER public key bytes from an X.509 PEM certificate.
+ * Uses Node.js crypto.X509Certificate API (Node 15.6+).
+ */
+function extractSpkiFromCert(certPem: string): Uint8Array {
+  // Dynamic require so this module doesn't fail in edge runtimes that
+  // don't have Node's crypto module — but for our use case (Node 20 server)
+  // this is always present.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const nodeCrypto = require('crypto') as typeof import('crypto');
+  const cert = new nodeCrypto.X509Certificate(certPem);
+  const pubKey = cert.publicKey;
+  const spkiDer = pubKey.export({ format: 'der', type: 'spki' });
+  return new Uint8Array(spkiDer);
 }
 
-async function importPublicKey(pem: string): Promise<CryptoKey> {
-  const der = pemToSpkiDer(pem);
-  return crypto.subtle.importKey(
+async function importPublicKey(certPem: string): Promise<CryptoKey> {
+  const spkiDer = extractSpkiFromCert(certPem);
+  const subtle = (globalThis as any).crypto?.subtle;
+  if (!subtle) {
+    throw new Error('crypto.subtle is not available in this runtime');
+  }
+  return subtle.importKey(
     'spki',
-    der,
+    spkiDer,
     { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
     ['verify']
@@ -72,46 +82,36 @@ async function importPublicKey(pem: string): Promise<CryptoKey> {
 export async function verifyFirebaseToken(token: string): Promise<FirebaseDecodedToken> {
   const parts = token.split('.');
   if (parts.length !== 3) {
-    throw new Error('Invalid JWT format');
+    throw new Error('Invalid JWT format: expected 3 parts');
   }
 
   const [headerB64, payloadB64, signatureB64] = parts;
 
-  // Parse header to get kid
-  const header = JSON.parse(atob(headerB64.replace(/-/g, '+').replace(/_/g, '/')));
+  const headerJson = new TextDecoder().decode(base64UrlDecode(headerB64));
+  const header = JSON.parse(headerJson);
   const kid = header.kid;
-  if (!kid) {
-    throw new Error('JWT header missing kid');
-  }
+  if (!kid) throw new Error('JWT header missing kid');
 
-  // Fetch public keys
-  const keys = await fetchPublicKeys();
-  const publicKeyPem = keys[kid];
-  if (!publicKeyPem) {
-    // Force refresh cache and retry once
-    cacheExpiry = 0;
-    const freshKeys = await fetchPublicKeys();
-    const freshPem = freshKeys[kid];
-    if (!freshPem) {
+  let keys = await fetchPublicKeys();
+  let certPem = keys[kid];
+  if (!certPem) {
+    clearCache();
+    keys = await fetchPublicKeys();
+    certPem = keys[kid];
+    if (!certPem) {
       throw new Error(`No public key found for kid: ${kid}`);
     }
-    return verifyWithKey(token, payloadB64, signatureB64, freshPem);
   }
 
-  return verifyWithKey(token, payloadB64, signatureB64, publicKeyPem);
-}
-
-async function verifyWithKey(
-  token: string,
-  payloadB64: string,
-  signatureB64: string,
-  publicKeyPem: string
-): Promise<FirebaseDecodedToken> {
   const signatureBytes = base64UrlDecode(signatureB64);
-  const signedData = new TextEncoder().encode(token.split('.')[0] + '.' + payloadB64);
+  const signedData = new TextEncoder().encode(parts[0] + '.' + parts[1]);
 
-  const key = await importPublicKey(publicKeyPem);
-  const valid = await crypto.subtle.verify(
+  const key = await importPublicKey(certPem);
+  const subtle = (globalThis as any).crypto?.subtle;
+  if (!subtle) {
+    throw new Error('crypto.subtle is not available in this runtime');
+  }
+  const valid = await subtle.verify(
     'RSASSA-PKCS1-v1_5',
     key,
     signatureBytes,
@@ -122,31 +122,21 @@ async function verifyWithKey(
     throw new Error('Invalid JWT signature');
   }
 
-  // Decode payload
-  const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')));
+  const payloadJson = new TextDecoder().decode(base64UrlDecode(payloadB64));
+  const payload = JSON.parse(payloadJson);
 
-  // Validate issuer: https://securetoken.google.com/{projectId}
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const expectedIssuer = `${JWT_ISSUER_PREFIX}${projectId}`;
-  if (payload.iss !== expectedIssuer) {
+  if (projectId && payload.iss !== `https://securetoken.google.com/${projectId}`) {
     throw new Error(`Invalid issuer: ${payload.iss}`);
   }
-
-  // Validate audience: https://auth.firebase.google.com/g/{projectId} or {projectId}
-  if (projectId && payload.aud !== projectId && payload.aud !== `${EXPECTED_AUDIENCE_PREFIX}${projectId}`) {
-    // Some Firebase tokens use just projectId as audience
-    if (payload.aud !== projectId) {
-      console.warn('[verify-token] audience mismatch, continuing:', payload.aud);
-    }
+  if (projectId && payload.aud !== projectId) {
+    throw new Error(`Invalid audience: ${payload.aud}`);
   }
 
-  // Check expiration
   const now = Math.floor(Date.now() / 1000);
   if (payload.exp && payload.exp < now) {
     throw new Error('Token expired');
   }
-
-  // Check issued-at
   if (payload.iat && payload.iat > now + 300) {
     throw new Error('Token issued in the future');
   }
